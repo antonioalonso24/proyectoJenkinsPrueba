@@ -1,46 +1,28 @@
 pipeline {
-  agent any  // Usamos cualquier nodo disponible
+  agent any
 
   stages {
-    stage('Checkout') {
+    stage('Build') {
       steps {
-        // Clona el repositorio con tu Jenkinsfile y el código
-        checkout scm
-      }
-    }
-
-    stage('Build & Test') {
-      steps {
-        // Intentamos con Docker; si no está disponible, usamos el entorno local
+        // Crear y activar el entorno virtual, luego instalar las dependencias
         sh '''
-          echo "=== Build & Test Stage ==="
-          if [ -x "$(command -v docker)" ]; then
-            echo "Docker disponible: ejecutando en contenedor python:3.10"
-            docker run --rm -u root:root \
-              -v "$WORKSPACE":/workspace -w /workspace \
-              python:3.10 bash -c "
-                python -m venv venv && \
-                . venv/bin/activate && \
-                pip install --upgrade pip && \
-                pip install -r requirements.txt && \
-                pytest --verbose
-              "
-          else
-            echo "Docker no encontrado: ejecutando localmente"
-            python3 -m venv venv && \
-            . venv/bin/activate && \
-            pip install --upgrade pip && \
-            pip install -r requirements.txt && \
-            pytest --verbose
-          fi
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
         '''
       }
     }
-
+    stage('Test') {
+      steps {
+        // Ejecutar pruebas con pytest
+        sh '. venv/bin/activate && python3 -m pytest'
+      }
+    }
     stage('Deploy') {
       steps {
-        // Simulación de despliegue
-        echo 'Despliegue simulado exitoso'
+        // Despliegue simulado
+        sh 'echo "Despliegue simulado"'
       }
     }
   }
