@@ -1,5 +1,5 @@
 pipeline {
-  agent any
+  agent any  // Usamos cualquier nodo que tenga Docker instalado
 
   stages {
     stage('Checkout') {
@@ -11,18 +11,18 @@ pipeline {
 
     stage('Build & Test in Docker') {
       steps {
-        script {
-          // Usa la imagen oficial de Python 3.10
-          docker.image('python:3.10').inside('-u root:root') {
-            sh '''
-              python -m venv venv               # crea el virtualenv
-              . venv/bin/activate              # activa
-              pip install --upgrade pip        # actualiza pip
-              pip install -r requirements.txt  # instala dependencias
-              pytest --verbose                 # lanza tus tests
-            '''
-          }
-        }
+        // Ejecuta todo dentro de un contenedor Docker usando el binario Docker
+        sh '''
+          docker run --rm -u root:root \
+            -v "$WORKSPACE":/workspace -w /workspace \
+            python:3.10 bash -c "
+              python -m venv venv && \
+              . venv/bin/activate && \
+              pip install --upgrade pip && \
+              pip install -r requirements.txt && \
+              pytest --verbose
+            "
+        '''
       }
     }
 
