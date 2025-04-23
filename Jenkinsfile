@@ -1,5 +1,5 @@
 pipeline {
-  agent any  // Usamos cualquier nodo que tenga Docker instalado
+  agent any  // Usamos cualquier nodo disponible
 
   stages {
     stage('Checkout') {
@@ -9,19 +9,30 @@ pipeline {
       }
     }
 
-    stage('Build & Test in Docker') {
+    stage('Build & Test') {
       steps {
-        // Ejecuta todo dentro de un contenedor Docker usando el binario Docker
+        // Intentamos con Docker; si no está disponible, usamos el entorno local
         sh '''
-          docker run --rm -u root:root \
-            -v "$WORKSPACE":/workspace -w /workspace \
-            python:3.10 bash -c "
-              python -m venv venv && \
-              . venv/bin/activate && \
-              pip install --upgrade pip && \
-              pip install -r requirements.txt && \
-              pytest --verbose
-            "
+          echo "=== Build & Test Stage ==="
+          if [ -x "$(command -v docker)" ]; then
+            echo "Docker disponible: ejecutando en contenedor python:3.10"
+            docker run --rm -u root:root \
+              -v "$WORKSPACE":/workspace -w /workspace \
+              python:3.10 bash -c "
+                python -m venv venv && \
+                . venv/bin/activate && \
+                pip install --upgrade pip && \
+                pip install -r requirements.txt && \
+                pytest --verbose
+              "
+          else
+            echo "Docker no encontrado: ejecutando localmente"
+            python3 -m venv venv && \
+            . venv/bin/activate && \
+            pip install --upgrade pip && \
+            pip install -r requirements.txt && \
+            pytest --verbose
+          fi
         '''
       }
     }
