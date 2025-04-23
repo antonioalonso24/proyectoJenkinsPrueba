@@ -1,40 +1,35 @@
 pipeline {
-  // Usamos Docker: cada etapa correrá dentro de un contenedor python:3.10
-  agent {
-    docker {
-      image 'python:3.10'    // imagen oficial que trae python3-venv y pip
-      args  '-u root:root'   // opcional: ejecutar como root (por ejemplo, si necesitas instalar deps de SO)
-    }
-  }
+  agent any
+
   stages {
     stage('Checkout') {
       steps {
-        checkout scm         // baja tu repositorio (incluye el Jenkinsfile)
+        // Clona el repositorio con tu Jenkinsfile y el código
+        checkout scm
       }
     }
-    stage('Build') {
+
+    stage('Build & Test in Docker') {
       steps {
-        // Agrupamos en un solo shell para que el entorno virtual persista en este contenedor
-        sh '''
-          python -m venv venv               # crea el virtualenv
-          . venv/bin/activate              # activa
-          pip install --upgrade pip        # actualiza pip
-          pip install -r requirements.txt  # instala tus dependencias
-        '''
+        script {
+          // Usa la imagen oficial de Python 3.10
+          docker.image('python:3.10').inside('-u root:root') {
+            sh '''
+              python -m venv venv               # crea el virtualenv
+              . venv/bin/activate              # activa
+              pip install --upgrade pip        # actualiza pip
+              pip install -r requirements.txt  # instala dependencias
+              pytest --verbose                 # lanza tus tests
+            '''
+          }
+        }
       }
     }
-    stage('Test') {
-      steps {
-        sh '''
-          . venv/bin/activate      # vuelves a activar el venv
-          pytest --verbose         # lanzas tus tests
-        '''
-      }
-    }
+
     stage('Deploy') {
       steps {
         // Simulación de despliegue
-        sh 'echo "Despliegue simulado exitoso"'
+        echo 'Despliegue simulado exitoso'
       }
     }
   }
