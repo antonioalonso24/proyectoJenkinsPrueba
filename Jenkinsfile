@@ -1,27 +1,21 @@
 pipeline {
   agent any
-
   stages {
     stage('Build') {
       steps {
-        // Crear y activar el entorno virtual, luego instalar las dependencias
-        sh '''
-          python3 -m venv venv
-          . venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-        '''
+        sh 'python3 -m venv venv'
+        sh '. venv/bin/activate'
+        sh 'pip install -r requirements.txt'
       }
     }
     stage('Test') {
       steps {
-        // Ejecutar pruebas con pytest
-        sh '. venv/bin/activate && python3 -m pytest'
+        sh '. venv/bin/activate'
+        sh 'pytest --maxfail=1 --disable-warnings -q'
       }
     }
     stage('Deploy') {
       steps {
-        // Despliegue simulado
         sh 'echo "Despliegue simulado"'
       }
     }
